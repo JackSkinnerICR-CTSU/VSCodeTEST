@@ -1,0 +1,1308 @@
+Title: "Regression Modelling in Biostatistics 2 (RM2) - Assignment 1"
+Name: Jack Skinner 
+Student number: 520196690
+Course coordinators: Professor Gillian Heller & Dr. Ken Beath.
+Due date: 09/09/2024
+Statistical software: R
+
+#Question 1:
+
+#a)
+
+```{r setup, include=TRUE}
+library(rstudioapi)
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+##############################################
+
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+
+q1 <- read_excel("assn1q1-1.xlsx")
+```
+
+```{r Data frame exploration, include=TRUE}
+str(q1)
+summary(q1)
+
+
+#MISSING VALUES CHECK
+
+print("Count of total missing values  ")
+sum(is.na(q1))
+print("Position of missing values ")
+which(is.na(q1))
+```
+
+```{r Question 1a Data exploration, include=TRUE}
+#Systolic Blood Pressure (mmHg)
+
+library(dplyr)
+q1 %>% count(sysbp)
+
+###############################################################################
+
+library(ggplot2)
+sysbp <- ggplot(q1, aes(x=sysbp)) +
+        geom_histogram(color="black", fill="white", bins=121) +
+        labs(title = 'Histogram of SBP', x = 'Systolic Blood Pressure (mmHg)', y = 'Count')
+  
+sysbp
+
+
+###############################################################################
+
+#Body Mass Index (BMI)
+
+library(ggplot2)
+bmi <- ggplot(q1, aes(x=bmi)) +
+        geom_histogram(color="black", fill="white",) +
+        labs(title = 'Histogram of BMI', 
+             x = bquote('BMI'~ (kg/m^2)), y = 'Count')
+
+
+bmi
+
+###############################################################################
+
+#Age (Years)
+
+library(ggplot2)
+age <- ggplot(q1, aes(x=age)) +
+        geom_histogram(color="black", fill="white", bins=25) +
+        labs(title = 'Histogram of Age', 
+             x = bquote('Age'~ (Years)), y = 'Count')
+
+age
+
+###############################################################################
+
+library(ggplot2)
+chd <- ggplot(q1, aes(x=chd)) +
+        geom_bar(color="black", fill="white", bins=2, width = 0.5) +
+        labs(title = 'Barchart of CHD Status', 
+             x = bquote('CHD Status'~ ("0 = Absent, 1 = Present")), y = 'Count') +
+             scale_x_continuous(breaks = seq(0, 1, by = 1))
+
+chd
+
+#CHD (0=No, 1=Yes)
+
+table(q1$chd)
+
+#   0    1 
+#1469  274 
+
+```
+
+```{r Combined plots, include=TRUE}
+#Exploratory
+
+library(ggpubr)
+
+figure1 <- ggarrange(sysbp, bmi, age, chd,
+                    labels = c("A", "B", "C", "D"),
+                    ncol = 2, nrow = 2)
+
+figure1
+```
+
+```{r SBP ~ plots, include=TRUE}
+sysbpbmi <- ggplot(q1, aes(x=bmi, y=sysbp)) + geom_point(size=0.5) +
+  labs(title = 'Scatterplot of SBP ~ BMI', 
+             x = bquote('BMI'~ (kg/m^2)), y = 'SBP' ~ (mmHg))
+sysbpbmi
+
+###########################
+
+sysbpage <- ggplot(q1, aes(x=age, y=sysbp,)) + geom_point(size=0.5) +
+  labs(title = 'Scatterplot of SBP ~ Age', 
+             x = bquote('Age'~ (Years)), y = 'SBP' ~ (mmHg))
+sysbpage
+
+###########################
+
+sysbpchd <- ggplot(q1, aes(x=chd, y=sysbp, group = chd,)) + geom_boxplot(size=0.5) +
+  labs(title = 'Boxplot of SBP ~ CHD Status', 
+             x = bquote('CHD Status'~ ("0 = CHD absent, 1 = CHD present")), y = 'SBP' ~ (mmHg)) +
+            scale_x_continuous(breaks = seq(0, 1, by = 1))
+sysbpchd
+
+sysbpchdttest <- t.test(sysbp ~ chd, data = q1, var.equal = TRUE)
+
+sysbpchdttest
+aggregate(sysbp ~ chd, data=q1, FUN = sd)
+
+###########################
+
+bmiage <- ggplot(q1, aes(x=age, y=bmi,)) + geom_point(size=0.5) +
+  labs(title = 'Scatterplot of BMI ~ Age', 
+             x = bquote('Age'~ (years)), y = 'BMI' ~ (kg/m^2))
+bmiage
+
+###########################
+
+bmichd <- ggplot(q1, aes(x=chd, y=bmi, group=chd)) + geom_boxplot(size=0.5) +
+  labs(title = 'Boxplot of BMI ~ CHD', 
+             x = bquote('CHD Status'~ ("0 = CHD absent, 1 = CHD present")), y = 'BMI' ~ (kg/m^2)) +
+            scale_x_continuous(breaks = seq(0, 1, by = 1))
+bmichd
+
+bmichdttest <- t.test(bmi ~ chd, data = q1, var.equal = TRUE)
+
+bmichdttest
+aggregate(bmi ~ chd, data=q1, FUN = sd)
+
+###########################
+
+agebmi <- ggplot(q1, aes(x=bmi, y=age,)) + geom_point(size=0.5) +
+  labs(title = 'Scatterplot of Age ~ BMI', 
+             x = bquote('BMI'~ (m/kg^2)), y = 'Age' ~ (Years))
+agebmi
+
+###########################
+
+agechd <- ggplot(q1, aes(x=chd, y=age, group=chd)) + geom_boxplot(size=0.5) +
+  labs(title = 'Boxplot of Age ~ CHD', 
+             x = bquote('CHD Status'~ ("0 = CHD absent, 1 = CHD present")), y = 'Age' ~ (Years)) +
+            scale_x_continuous(breaks = seq(0, 1, by = 1))
+agechd
+
+agechdttest <- t.test(age ~ chd, data = q1, var.equal = TRUE)
+
+agechdttest
+aggregate(age ~ chd, data=q1, FUN = sd)
+
+###########################
+
+#Exploratory
+
+library(ggpubr)
+
+figure2 <- ggarrange(sysbpbmi, sysbpage, sysbpchd, bmiage,
+                    labels = c("E", "F", "G", "H"),
+                    ncol = 2, nrow = 2)
+
+figure2
+
+###########################
+
+figure3 <- ggarrange(bmichd, agechd,
+                    labels = c("I", "J"),
+                    ncol = 2, nrow = 1)
+
+figure3
+```
+
+The variable Systolic Blood Pressure (SBP) has 121 unique values that are distributed somewhat normally with a right-skew, indicating a small amount of very high SBP measurements. The SBP variable has a recorded minimum value of 87 mmHg and maximum value of 230 mmHg. Furthermore, SBP has a mean value of ~135.83 mmHg with standard deviation of ~21.07mmHg.
+
+Similarly the variable Body Mass Index (BMI) has 25 unique values that are also distributed somewhat normally with a small right skew. BMI has a minimum value of ~15.3kg/m^2 and a maximum of ~39.6kg/m^2 with a mean value of ~24.68kg/m^2 with a standard deviation of ~3.03kg/m^2.
+
+Age is distributed between the minimum value of 40 years and maximum age of 64 years old. The age variable differs slightly from a normal distribution in that, despite the mean age being ~51.72 years with a standard deviation of ~6.35 years there is a considerably larger amount of 47 and 48 year olds within the data compared to the other ages which will pull the mean downwards.
+
+Lastly, the Coronary Heart Disease (CHD) indicator variable within the data (0 = No, 1 = Yes) has 1469 individuals with no CHD and 274 individuals with CHD.   
+
+#b)
+
+```{r Linear model, include=TRUE}
+
+#No spline for BMI
+
+q1cc <- data.frame(q1)
+lm1 <- lm(sysbp ~ bmi + age + chd, data=q1cc)
+summary(lm1)
+confint(lm1)
+
+plot(sysbp ~ bmi, xlab="BMI",ylab="SBP", data = q1cc)
+lines(lowess(q1cc$sysbp ~ q1cc$bmi, f=0.2), col=4,lwd=2)
+
+#Spline for BMI
+
+#lm2 <- lm(sysbp ~ poly(bmi, 2, raw = TRUE) + age + chd, data=q1cc)
+#summary(lm1)
+#confint(lm1)
+```
+
+```{r lm1 residual assumptions diagnostics, include=TRUE}
+par(mfrow=c(1,2))
+plot(lm1, 1) #Fitted vs residual plot
+plot(lm1, 2) #Normal quantile plot
+
+#Histogram of residuals
+library(ggplot2)
+ggplot(data = q1cc, aes(x = lm1$residuals)) +
+    geom_histogram(fill = 'steelblue', color = 'black', bins = 25) +
+    labs(title = 'Histogram of Linear Model 1 Residuals', x = 'Residuals', y = 'Frequency')
+
+########################################
+
+q1cc$chd <- as.factor(q1$chd)
+
+########################################
+
+#Plot of SBP ~ BMI by CHD status (with & without):
+
+library(ggplot2)
+sysbpbmi_chd <- ggplot(q1cc, aes(x=bmi, y=sysbp, col=chd)) + geom_point(size=0.5) +
+  geom_smooth(method = "lm", se=FALSE) +
+ labs(title = 'Scatterplot of SBP ~ BMI by CHD', 
+             x = bquote('BMI'~ (kg/m^2)), y = 'SBP' ~ (mmHg))
+
+sysbpbmi_chd
+
+library(ggplot2)
+sysbpbmi_nochd <- ggplot(q1cc, aes(x=bmi, y=sysbp,)) + geom_point(size=0.5) +
+  geom_smooth(method = "lm", se=FALSE) +
+ labs(title = 'Scatterplot of SBP ~ BMI', 
+             x = bquote('BMI'~ (kg/m^2)), y = 'SBP' ~ (mmHg))
+
+sysbpbmi_nochd
+
+#### Minimal interaction ###########
+
+########################################
+
+#Plot of SBP ~ Age by CHD status (with & without):
+
+library(ggplot2)
+sysbpage_chd <- ggplot(q1cc, aes(x=age, y=sysbp, col=chd)) + geom_point(size=0.5) +
+  geom_smooth(method = "lm", se=FALSE) +
+ labs(title = 'Scatterplot of SBP ~ AGE by CHD', 
+             x = bquote('Age'~ (Years)), y = 'SBP' ~ (mmHg))
+
+sysbpage_chd
+
+library(ggplot2)
+sysbpage_nochd <- ggplot(q1cc, aes(x=age, y=sysbp,)) + geom_point(size=0.5) +
+  geom_smooth(method = "lm", se=FALSE) +
+ labs(title = 'Scatterplot of SBP ~ AGE', 
+             x = bquote('Age'~ (Years)), y = 'SBP' ~ (mmHg))
+
+sysbpage_nochd
+
+#### Minimal interaction ###########
+
+########################################
+
+figure4 <- ggarrange(sysbpbmi_chd, sysbpbmi_nochd, sysbpage_chd, sysbpage_nochd,
+                    labels = c("A", "B", "C", "D"),
+                    ncol = 2, nrow = 2)
+
+figure4
+```
+
+```{r outliers and influential observaitons,include=TRUE}
+#BMI
+
+q1cc$ID <- seq.int(nrow(q1cc))
+
+#Check outliers and influential points
+#Plot the regression with ID's for visual inspection of any potential outliers and influential points
+plot(q1cc$bmi, q1cc$sysbp)
+text(q1cc$bmi, q1cc$sysbp, labels = q1cc$ID, pos = 1) #adds ID to plot
+
+#Cook's distance
+
+###the option "labels.id" show the label from the variable id rather than the row number
+plot(lm1, c(4,5), labels.id = lm1$ID)
+#Plotting the change in the beta for BMI when each observation is removed
+inflm1 <- influence.measures(lm1)
+plot(q1cc$ID, inflm1$infmat[,2], xlab = "ID", ylab = "BMI")
+text(q1cc$ID, inflm1$infmat[,2], labels = q1cc$ID, pos = 1, cex=.7) #adds ID's
+title("Change in Beta_BMI if removed by ID")
+
+q1cc[1316,] #High SBP = 208, aged 58, CHD=1
+q1cc[1405,] #Extremely high SBP = 230, aged 61, CHD=1
+q1cc[1544,] #SBP=186, age=43, CHD=1 <- young to have CHD compared with others in sample
+
+par(mfrow=c(1,2))
+plot(lm1, c(4,5), labels.id = lm1$ID)
+
+###############################################################################
+
+#Age
+
+#Check outliers and influential points
+#Plot the regression with ID's for visual inspection of any potential outliers and influential points
+plot(q1cc$age, q1cc$sysbp)
+text(q1cc$age, q1cc$sysbp, labels = q1cc$ID, pos = 1) #adds ID to plot
+
+#Cook's distance
+
+###the option "labels.id" show the label from the variable id rather than the row number
+plot(lm1, c(4,5), labels.id = lm1$ID)
+#Plotting the change in the beta for BMI when each observation is removed
+inflm1 <- influence.measures(lm1)
+plot(q1cc$ID, inflm1$infmat[,3], xlab = "ID", ylab = "Age")
+text(q1cc$ID, inflm1$infmat[,3], labels = q1cc$ID, pos = 1, cex=.7) #adds ID's
+title("Change in Beta_Age if removed by ID")
+
+
+
+par(mfrow=c(1,2))
+plot(lm1, c(4,5), labels.id = lm1$ID)
+
+##################################################
+
+#Combined Covariates
+
+par(mfrow=c(3,2),cex=0.7, cex.main=0.7, mai=c(0.25,0.25,0.25,0.25))
+plot(lm1,which=1:6)
+```
+
+#c)
+
+```{r GLM Gamma identity link, include=TRUE}
+q1.1cc <- data.frame(q1cc)
+q1.1cc$bmi <- round(q1.1cc$bmi,digits=1)
+#Try rounding BMI to whole 1 decimal place
+
+glm1<-glm(sysbp ~ bmi + age + chd, family=Gamma(link="identity"),data=q1cc)
+summary(glm1)
+confint(glm1)
+
+glm1.1<-glm(sysbp ~ bmi + age + chd, family=Gamma(link="identity"),data=q1.1cc)
+summary(glm1.1)
+confint(glm1.1)
+```
+
+```{r GLM Gamma sqrt link, include=TRUE}
+glm2<-glm(sysbp ~ bmi + age + chd, family=Gamma(link="sqrt"),data=q1cc)
+summary(glm2)
+confint(glm2)
+
+glm2.1<-glm(sysbp ~ bmi + age + chd, family=Gamma(link="sqrt"),data=q1.1cc)
+summary(glm2.1)
+confint(glm2.1)
+
+cbind(coef(glm2), confint.default(glm2))^2
+```
+
+```{r GLM Gamma log link, include=TRUE}
+
+glm3<-glm(sysbp ~ bmi + age + chd, family=Gamma(link="log"),data=q1cc)
+summary(glm3)
+confint(glm3)
+
+glm3.1<-glm(sysbp ~ bmi + age + chd, family=Gamma(link="log"),data=q1.1cc)
+summary(glm3.1)
+confint(glm3.1)
+
+#exponentiate 
+
+exp(cbind(coef(glm3),confint.default(glm3)))
+```
+
+```{r Fitted values from each model compared}
+
+#BMI as continuous (5 decimal places)
+
+plot(sysbp~bmi, data=q1cc)
+lines(glm1$fitted.values[order(bmi)]~bmi[order(bmi)],data=q1cc,
+      col="red",lty=2)
+legend("topleft",legend=c("identity link"),lty=1,
+       col=c("red"))
+
+plot(sysbp~bmi, data=q1cc)
+lines(glm2$fitted.values[order(bmi)]~bmi[order(bmi)],data=q1cc,
+      col="blue",lty=2)
+legend("topleft",legend=c("square root link"),lty=1,
+       col=c("blue"))
+
+plot(sysbp~bmi, data=q1cc)
+lines(glm3$fitted.values[order(bmi)]~bmi[order(bmi)],data=q1cc,
+      col="purple",lty=2)
+legend("topleft",legend=c("log link"),lty=1,
+       col=c("purple"))
+
+#BMI as continuous (1 decimal places)
+
+plot(sysbp~bmi, data=q1.1cc)
+lines(glm1.1$fitted.values[order(bmi)]~bmi[order(bmi)],data=q1.1cc,
+      col="red",lty=2)
+lines(glm2.1$fitted.values[order(bmi)]~bmi[order(bmi)],data=q1.1cc,
+      col="blue", lty=2)
+lines(glm3.1$fitted.values[order(bmi)]~bmi[order(bmi)],data=q1.1cc,
+      col="purple", lty=2)
+legend("topleft",legend=c("identity link","square root link", "log link"),lty=1:3,
+       col=c("red","blue","purple"))
+
+#Age as continuous 
+
+plot(sysbp~age, data=q1cc)
+lines(glm1$fitted.values[order(age)]~age[order(age)],data=q1cc,
+      col="red",lty=2)
+legend("topleft",legend=c("identity link"),lty=1,
+       col=c("red"))
+
+plot(sysbp~age, data=q1cc)
+lines(glm2$fitted.values[order(age)]~age[order(age)],data=q1cc,
+      col="blue",lty=2)
+legend("topleft",legend=c("square root link"),lty=1,
+       col=c("blue"))
+
+plot(sysbp~age, data=q1cc)
+lines(glm3$fitted.values[order(age)]~age[order(age)],data=q1cc,
+      col="purple",lty=2)
+legend("topleft",legend=c("log link"),lty=1,
+       col=c("purple"))
+
+plot(sysbp~age, data=q1cc)
+lines(glm1$fitted.values[order(age)]~age[order(age)],data=q1cc,
+      col="red",lty=2)
+lines(glm2$fitted.values[order(age)]~age[order(age)],data=q1cc,
+      col="blue", lty=2)
+lines(glm3$fitted.values[order(age)]~age[order(age)],data=q1cc,
+      col="purple", lty=2)
+legend("topleft",legend=c("identity link","square root link", "log link"),lty=1:3,
+       col=c("red","blue","purple"))
+
+#CHD as continuous 
+
+plot(sysbp~chd, data=q1cc)
+lines(glm1$fitted.values[order(chd)]~chd[order(chd)],data=q1cc,
+      col="red",lty=2)
+legend("topleft",legend=c("identity link"),lty=1,
+       col=c("red"))
+
+plot(sysbp~chd, data=q1cc)
+lines(glm2$fitted.values[order(chd)]~chd[order(chd)],data=q1cc,
+      col="blue",lty=2)
+legend("topleft",legend=c("square root link"),lty=1,
+       col=c("blue"))
+
+plot(sysbp~chd, data=q1cc)
+lines(glm3$fitted.values[order(chd)]~chd[order(chd)],data=q1cc,
+      col="purple",lty=2)
+legend("topleft",legend=c("log link"),lty=1,
+       col=c("purple"))
+
+plot(sysbp~chd, data=q1cc)
+lines(glm1$fitted.values[order(chd)]~chd[order(chd)],data=q1cc,
+      col="red",lty=2)
+lines(glm2$fitted.values[order(chd)]~chd[order(chd)],data=q1cc,
+      col="blue",lty=2)
+lines(glm3$fitted.values[order(chd)]~chd[order(chd)],data=q1cc,
+      col="purple",lty=2)
+legend("topleft",legend=c("identity link","square root link", "log link"),lty=1:3,
+       col=c("red","blue","purple"))
+```
+
+```{r AIC values, include=TRUE}
+AIC(glm1)
+AIC(glm2)
+AIC(glm3)
+BIC(glm1)
+BIC(glm2)
+BIC(glm3)
+
+aic.table <- data.frame(models=c("Gamma, Identity","Gamma, Sqrt","Gamma, Log"),
+                        AIC=c(AIC(glm1),AIC(glm2),AIC(glm3)),
+                        BIC=c(BIC(glm1), BIC(glm2), BIC(glm3)))
+
+library(gt)
+aic.table %>%
+   gt() %>%
+  fmt_number(
+    decimals = 1,
+    use_seps = FALSE
+  ) %>%
+  cols_label(
+    models = "Models",
+    AIC = "AIC",
+    BIC = "BIC"
+  )
+```
+
+#d)
+
+```{r Residuals, include=TRUE}
+
+#Deviance residuals 
+
+q1dresdev <- residuals(glm3, type="deviance")
+op1 <- par(mfrow=c(2,2),cex=0.7, cex.main=1.0, mai=c(0.25,0.25,0.25,0.25))
+hist(q1dresdev, freq=FALSE, breaks=8)
+lines(density(q1dresdev))
+qqnorm(q1dresdev)
+qqline(q1dresdev)
+plot(fitted(glm3),q1dresdev)
+par(op1)
+
+#Qunatile residuals 
+
+library(statmod)
+q <- qresid(glm3)
+op2 <- par(mfrow=c(2,2),cex=0.7, cex.main=1.0, mai=c(0.25,0.25,0.25,0.25))
+hist(q, freq=FALSE, breaks=8)
+lines(density(q))
+qqnorm(q)
+qqline(q)
+plot(fitted(glm3),q)
+par(op2)
+
+#GAMLSS
+
+library(gamlss)
+model3 <- gamlss(sysbp ~ bmi + age + chd, 
+          family=GA, data=q1cc)
+op3 <- par(mfrow=c(2,2),cex=0.7, cex.main=1.0, mai=c(0.25,0.25,0.25,0.25))
+plot(model3)
+
+#Pearson residuals
+pr<-resid(glm3,type='pearson')
+#Deviance residuals
+dr<-resid(glm3,type='deviance')
+#Quantile residuals
+library(statmod)
+qr<-qresiduals(glm3)
+```
+
+```{r Check observations, include=TRUE}
+library(boot)
+diag3 <- glm.diag(glm3)
+
+#Deviance residuals plotted in order of observations
+
+dev3 <- residuals(glm3, type="deviance")
+plot(dev3)
+```
+
+Deviance residuals seem reasonably equally distributed.
+
+```{r Leverage statistics, include=TRUE}
+lev3 <- diag3$h
+plot(lev3)
+text(1:length(lev3),lev3,1:length(lev3), cex=0.6, pos=4)
+```
+
+Observations/ID #'s 504 & 126 seem to have fairly large leverages compared to the rest of the observations.
+
+```{r Cooks distance, include=TRUE}
+cd<-diag3$cook
+plot(cd)
+text(1:length(cd), cd, 1:length(cd), cex=0.6, pos=4)
+```
+
+Observation numbers 1316 and 1544 have Cook’s distances that stand out from the rest, but still fall well below the cutoff of 1. These two data points therefore did not exert an out-of-proportion influence of the coefficients 
+. So we conclude that there are no extreme data points which are exerting an unduly large influence on the coefficients.
+
+```{r LRT, include=TRUE}
+#Calculating Log-Likelihood ratios of full model and minimum model to get chi-squared statistic:
+
+#The minimum logLik value is obtained by fitting a model with only an intercept
+
+glm0 <- glm(sysbp ~ 1, family=Gamma (link="log"), data = q1cc)
+summary(glm0)
+
+llglm0 <- logLik(glm0)
+llglm0
+llglm3 <- logLik(glm3)
+llglm3
+
+C <- 2*(logLik(glm3)-logLik(glm0))
+print(as.numeric(C))
+
+
+library(lmtest)
+lrtest (glm0, glm3)
+print(pchisq(as.numeric(C), 2, lower.tail = FALSE))
+
+#Wald Test
+library(mdscore)
+wald.test(glm3, term=3)
+```
+
+```{r Added variable plots, include=TRUE}
+library(car)
+avPlots(glm3)
+```
+
+```{r Splines, include=TRUE}
+
+#BMI
+
+with(q1cc, plot(bmi, log(sysbp)))
+with(q1cc, lines(smooth.spline(log(sysbp)~bmi, df=3)))
+
+#Age
+
+with(q1cc, plot(age, log(sysbp)))
+with(q1cc, lines(smooth.spline(log(sysbp)~age, df=3)))
+```
+
+#e)
+
+```{r GLM3 Publication plot}
+
+summary(glm3)
+confint(glm3)
+exp(coef(glm3))
+exp(confint.default(glm3))
+
+library(gtsummary)
+library(tidyverse)
+library(car)
+library(gt)
+
+# format results into data frame with global p-values
+
+glm3 %>% 
+  tbl_regression(exponentiate = T, label=list(bmi="BMI",age="Age", chd="CHD Status")) %>% 
+                  bold_labels() %>%
+                   bold_p() %>%
+                   modify_footnote() %>%
+                   add_global_p()
+
+```
+#Question 2
+
+```{r Q2 Setup, include=TRUE}
+library(rstudioapi)
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+##############################################
+
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+
+q2 <- read_excel("assn1q2.xlsx")
+```
+
+```{r Q2 Data exploration, include=TRUE}
+str(q2)
+summary(q2)
+
+
+#MISSING VALUES CHECK
+
+print("Count of total missing values  ")
+sum(is.na(q2))
+print("Position of missing values ")
+which(is.na(q2))
+```
+
+```{r Q2 data summary, include=TRUE}
+
+q2cc <- data_frame(q2)
+q2cc$SelfHealth <- factor(q2cc$SelfHealth, levels = c("Poor", "Fair", "Good", "Very Good", "Excellent"))
+q2cc$Educ <- factor(q2cc$Educ, levels = c("<High School", "High School", "Some College", "College graduate+"))
+q2cc$Education <- q2cc$Educ
+q2cc$Gender <- as.factor(q2cc$Gender)
+q2cc$Ethnicity <- as.factor(q2cc$Ethnicity)
+
+
+library(gtsummary)
+library(tidyverse)
+library(car)
+library(gt)
+
+library(gtsummary)
+q2summarytable <-
+  tbl_summary(
+    q2cc,
+    include = c(SelfHealth, Age, Gender, Ethnicity, BMI, Education),
+    by = SelfHealth, # split table by Self Health Assessment
+    percent = c("column", "row", "cell"),
+  ) %>%
+    modify_header(label = "**Self-Rated Physical Health**") %>% # update the column header
+  bold_labels()
+q2summarytable
+```
+
+```{r Variable labelling, include=TRUE}
+
+library(dplyr)
+
+q2.1cc <- mutate(q2cc,
+         SH_code = case_when(
+           SelfHealth == "Poor" ~ 1,
+           SelfHealth == "Fair" ~ 2,
+           SelfHealth == "Good" ~ 3,
+           SelfHealth == "Very Good" ~ 4,
+           SelfHealth == "Excellent" ~ 5,
+         ),
+         Gender_code = case_when(
+           Gender == "Female" ~ 1,
+           Gender == "Male" ~ 2,
+         ),
+         Educ_code = case_when(
+           Educ == "<High School" ~ 1,
+           Educ == "High School" ~ 2,
+           Educ == "Some College" ~ 3,
+           Educ == "College graduate+" ~ 4,
+         ),
+         Ethnicity_code = case_when(
+           Ethnicity == "Black" ~ 1,
+           Ethnicity == "Hispanic" ~ 2,
+           Ethnicity == "White" ~ 3,
+           Ethnicity == "Other" ~ 4,
+         ))
+```
+
+```{r Variable checking, include=TRUE}
+boxplot(Age ~ SelfHealth, data=q2cc)
+library(ggplot2)
+SHage <- ggplot(q2cc, aes(x=SelfHealth,y=Age, fill = SelfHealth)) +
+  geom_boxplot(width=0.5, lty = 0.5)+
+  geom_point()+
+  labs(title = 'Boxplot of Age ~ Self Health Rating', 
+             x = bquote('Self Health Rating'~ (1-5)), y = 'Age' ~(Years))
+
+SHage
+
+############################
+
+boxplot(BMI ~ SelfHealth, data=q2cc)
+
+library(ggplot2)
+SHbmi <- ggplot(q2cc, aes(x=SelfHealth,y=BMI, fill = SelfHealth)) +
+  geom_boxplot(width=0.5, lty = 0.5)+
+  geom_point()+
+  labs(title = 'Boxplot of BMI ~ Self Health Rating', 
+             x = bquote('Self Health Rating'~ (1-5)), y = 'BMI' ~(kg/m^2))
+
+SHbmi
+
+############################
+
+library(dplyr)
+
+genderSH <-q2cc %>%
+  count(Gender, SelfHealth) %>%
+  mutate(prop = prop.table(n))
+
+genderSH$perc <- genderSH$prop*100
+
+plot(genderSH$SelfHealth, genderSH$prop, by=genderSH$Gender, data=genderSH)
+
+library(ggplot2)
+SHgen <- ggplot(genderSH, aes(x=SelfHealth,y=perc,group=Gender, colour = Gender)) +
+  geom_path(linetype = "dashed")+
+  geom_point()+
+  labs(title = 'Lineplot of Percentage ~ Self Health Rating', 
+             x = bquote('Self Health Rating'~ (1-5)), y = 'Percentage')
+
+SHgen
+
+
+gender_SHtable <- table(q2cc$Gender, q2cc$SelfHealth)
+gender_SHtable
+
+library(gtsummary)
+library(tidyverse)
+
+q2gendersummary <- q2cc %>%
+  tbl_summary(
+    include = c(SelfHealth),
+    by=Gender
+  ) %>%
+  bold_labels()
+
+q2gendersummary
+############################
+
+library(dplyr)
+ethnicitySH <- q2cc %>%
+  count(Ethnicity, SelfHealth) %>%
+  mutate(prop = prop.table(n))
+
+plot(ethnicitySH$SelfHealth, ethnicitySH$prop, by=ethnicitySH$Ethnicity, data=ethnicitySH)
+
+ethnicitySH$perc <- ethnicitySH$prop*100
+
+plot(ethnicitySH$SelfHealth, ethnicitySH$perc, by=ethnicitySH$Gender, data=ethnicitySH)
+
+library(ggplot2)
+SHeth <- ggplot(ethnicitySH, aes(x=SelfHealth,y=perc,group=Ethnicity, colour = Ethnicity)) +
+  geom_path(linetype = "dashed")+
+  geom_point()+
+  labs(title = 'Lineplot of Percentage ~ Self Health Rating', 
+             x = bquote('Self Health Rating'~ (1-5)), y = 'Percentage')
+
+SHeth
+
+ethnicity_SHtable <- table(q2cc$Ethnicity, q2cc$SelfHealth)
+ethnicity_SHtable
+
+q2ethnicitysummary <- q2cc %>%
+  tbl_summary(
+    include = c(SelfHealth),
+    by=Ethnicity
+  ) %>%
+  bold_labels()
+
+q2ethnicitysummary
+
+############################
+
+library(dplyr)
+educationSH <- q2cc %>%
+  count(Education, SelfHealth) %>%
+  mutate(prop = prop.table(n))
+
+education_SHtable <- table(q2cc$Education, q2cc$SelfHealth)
+education_SHtable
+
+educationSH$perc <- educationSH$prop*100
+
+plot(educationSH$SelfHealth, educationSH$perc, by=educationSH$Education, data=educationSH)
+
+library(ggplot2)
+SHedu <- ggplot(educationSH, aes(x=SelfHealth,y=perc,group=Education, colour = Education)) +
+  geom_path(linetype = "dashed")+
+  geom_point()+
+  labs(title = 'Lineplot of Percentage ~ Self Health Rating', 
+             x = bquote('Self Health Rating'~ (1-5)), y = 'Percentage')
+
+SHedu
+
+q2educationsummary <- q2cc %>%
+  tbl_summary(
+    include = c(SelfHealth),
+    by=Education
+  ) %>%
+  bold_labels()
+
+q2educationsummary
+```
+
+```{r variable plots, include=TRUE}
+
+#######  AGE ########
+
+library(ggplot2)
+q2age <- ggplot(q2.2cc, aes(x=Age)) +
+        geom_histogram(color="black", fill="white",bins=60) +
+        labs(title = 'Histogram of Age', x = 'Age', y = 'Count')
+  
+q2age
+
+#### *Highly right skewed ######## - NON LINEAR
+
+#######  BMI ########
+
+library(ggplot2)
+q2bmi <- ggplot(q2.2cc, aes(x=BMI)) +
+        geom_histogram(color="black", fill="white",bins=100) +
+        labs(title = 'Histogram of BMI', x = 'BMI', y = 'Count')
+  
+q2bmi
+
+#Slight right skew - NON LINEAR - looks almost BiModal
+
+```
+#NOMINAL REGRESSION
+
+```{r Univariate models, include=TRUE}
+
+#SH ~ Education
+
+library(nnet)
+library(dplyr)
+library(car)
+q2.2cc <- q2.1cc
+
+SHedutab <- table(q2cc$SelfHealth, q2cc$Education)
+SHedu <- as.data.frame(SHedu)
+
+#SH ~ Education
+
+fitmultinominal0.1 <- multinom(Var1 ~ Var2, weights = Freq, data = SHedu)
+summary(fitmultinominal0.1)
+
+fitmultinominal0.6 <- multinom(SelfHealth ~ Education, data = q2.2cc)
+summary(fitmultinominal0.6)
+
+z0.6 <- summary(fitmultinominal0.6)$coefficients/summary(fitmultinominal0.6)$standard.errors
+z0.6
+
+p0.6 <- (1 - pnorm(abs(z0.6), 0, 1)) * 2
+p0.6
+
+####################################################
+
+SHeth <- table(q2cc$SelfHealth, q2cc$Ethnicity)
+SHeth <- as.data.frame(SHeth)
+
+#SH ~ Ethnicity
+
+fitmultinominal0.2 <- multinom(Var1 ~ Var2, weights = Freq, data = SHeth)
+summary(fitmultinominal0.2)
+
+fitmultinominal0.7 <- multinom(SelfHealth ~ Ethnicity, data = q2.2cc)
+summary(fitmultinominal0.7)
+
+z0.7 <- summary(fitmultinominal0.7)$coefficients/summary(fitmultinominal0.7)$standard.errors
+z0.7
+
+p0.7 <- (1 - pnorm(abs(z0.7), 0, 1)) * 2
+p0.7
+
+####################################################
+
+SHgen <- table(q2cc$SelfHealth, q2cc$Gender)
+SHgen <- as.data.frame(SHgen)
+
+#SH ~ Gender
+
+fitmultinominal0.3 <- multinom(Var1 ~ Var2, weights = Freq, data = SHgen)
+summary(fitmultinominal0.3)
+
+fitmultinominal0.8 <- multinom(SelfHealth ~ Gender, data = q2.2cc)
+summary(fitmultinominal0.8)
+
+z0.8 <- summary(fitmultinominal0.8)$coefficients/summary(fitmultinominal0.8)$standard.errors
+z0.8
+
+p0.8 <- (1 - pnorm(abs(z0.8), 0, 1)) * 2
+p0.8
+
+####################################################
+
+SHage <- table(q2cc$SelfHealth, q2cc$Age)
+SHage <- as.data.frame(SHage)
+
+#SH ~ Age
+
+fitmultinominal0.4 <- multinom(Var1 ~ Var2, weights = Freq, data = SHage)
+summary(fitmultinominal0.4)
+
+fitmultinominal0.9 <- multinom(SelfHealth ~ Age, data = q2.2cc)
+summary(fitmultinominal0.9)
+
+z0.9 <- summary(fitmultinominal0.9)$coefficients/summary(fitmultinominal0.9)$standard.errors
+z0.9
+
+p0.9 <- (1 - pnorm(abs(z0.9), 0, 1)) * 2
+p0.9
+
+
+####################################################
+
+SHbmi <- table(q2cc$SelfHealth, q2cc$BMI)
+SHbmi <- as.data.frame(SHbmi)
+
+#SH ~ BMI
+
+fitmultinominal0.5 <- multinom(Var1 ~ Var2, weights = Freq, data = SHbmi, maxit=1000,MaxNWts=2000)
+summary(fitmultinominal0.5)
+
+fitmultinominal1.0 <- multinom(SelfHealth ~ BMI, data = q2.2cc)
+summary(fitmultinominal1.0)
+
+z1.0 <- summary(fitmultinominal1.0)$coefficients/summary(fitmultinominal1.0)$standard.errors
+z1.0
+
+p1.0 <- (1 - pnorm(abs(z1.0), 0, 1)) * 2
+p1.0
+
+```
+
+```{r Aggregate, include=TRUE}
+library(dplyr)
+
+str(q2.2cc_agg)
+
+  
+
+q2.2cc_agg %>% group_by(SelfHealth) %>% summarise(Age = median(Age), BMI = median(BMI), Education = count(Education), Ethnicity = count(Ethnicity), Gender = count(Gender))
+
+```
+
+#ORDINAL REGRESSION
+
+```{r Ordinal logistic regression setup, include=TRUE}
+require(foreign)
+require(ggplot2)
+require(MASS)
+require(Hmisc)
+require(reshape2)
+
+lapply(q2.1cc[, c("SelfHealth", "Age", "BMI", "Gender", "Ethnicity", "Education")], table)
+
+#Flat table for categorical variables
+
+ftable(xtabs(~ SelfHealth + Gender + Ethnicity + Education, data = q2.1cc))
+
+#Box plots for continuous variables
+
+#Age
+
+ggplot(q2.1cc, aes(x = SelfHealth, y = Age, fill = Gender)) +
+  geom_boxplot(size = .5) +
+  facet_grid(Education ~ Ethnicity, margins = TRUE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+#BMI
+
+ggplot(q2.1cc, aes(x = SelfHealth, y = BMI, fill = Gender)) +
+  geom_boxplot(size = .5) +
+  facet_grid(Education ~ Ethnicity, margins = TRUE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+```
+
+```{r Full ordinal regression model, include=TRUE}
+ordfit1 <- polr(SelfHealth ~ Age + BMI + Gender + Ethnicity + Education, data = q2.1cc, Hess=TRUE)
+
+## view a summary of the model
+summary(ordfit1)
+
+(coeftable <- coef(summary(ordfit1)))
+## calculate and store p values
+p <- pnorm(abs(coeftable[, "t value"]), lower.tail = FALSE) * 2
+
+## combined table
+(coeftable <- cbind(coeftable, "p value" = p))
+
+#95% CI'a
+(ordfti1ci <- confint(ordfit1))
+confint.default(ordfit1)
+
+##################################################################
+
+#KEEPING VARIABLES WITHIN THE MODEL: Categorical
+
+#Gender
+
+ordfit_gender <- polr(SelfHealth ~  Age + BMI + Ethnicity + Education, data = q2.1cc, Hess=TRUE)
+
+lrtest(ordfit1,ordfit_gender)
+
+#0.6152
+
+#Ethnicity
+
+ordfit_eth <- polr(SelfHealth ~  Age + BMI + Gender + Education, data = q2.1cc, Hess=TRUE)
+
+lrtest(ordfit_eth,ordfit1)
+
+#0.03288 *
+
+#Education
+
+ordfit_edu <- polr(SelfHealth ~  Age + BMI + Gender + Ethnicity , data = q2.1cc, Hess=TRUE)
+
+lrtest(ordfit1,ordfit_edu)
+
+#2.2e-16 ***
+
+#KEEPING VARIABLES WITHIN THE MODEL: Conintuous
+
+#Age P-value: 0.06370607
+
+#BMI P-value: 1.277925e-07
+```
+
+```{r Removing variables from full model, include=TRUE}
+
+#AGE 
+
+SHage0.1 <- polr(SelfHealth ~ Age, data=q2.1cc)
+summary(SHage0.1)
+(SHage0.1table <- coef(summary(SHage0.1)))
+## calculate and store p values
+p0.1 <- pnorm(abs(SHage0.1table[, "t value"]), lower.tail = FALSE) * 2
+
+## combined table
+(SHage0.1table <- cbind(SHage0.1table, "p value" = p0.1))
+
+#p=0.02119702
+
+####################
+
+#BMI
+
+
+SHbmi0.1 <- polr(SelfHealth ~ BMI, data=q2.1cc)
+summary(SHbmi0.1)
+(SHbmi0.1table <- coef(summary(SHbmi0.1)))
+## calculate and store p values
+p0.2 <- pnorm(abs(SHbmi0.1table[, "t value"]), lower.tail = FALSE) * 2
+
+## combined table
+(SHbmi0.1table <- cbind(SHbmi0.1table, "p value" = p0.2))
+
+#p=8.949702e-09
+
+###########################
+
+SHgen0.1 <- polr(SelfHealth ~ Gender, data=q2.1cc)
+summary(SHgen0.1)
+(SHgen0.1table <- coef(summary(SHgen0.1)))
+## calculate and store p values
+p0.3 <- pnorm(abs(SHgen0.1table[, "t value"]), lower.tail = FALSE) * 2
+
+## combined table
+(SHgen0.1table <- cbind(SHgen0.1table, "p value" = p0.3))
+
+#p=3.507824e-01
+
+###########################
+
+SHeth0.1 <- polr(SelfHealth ~ Ethnicity, data=q2.1cc)
+summary(SHeth0.1)
+(SHeth0.1table <- coef(summary(SHeth0.1)))
+## calculate and store p values
+p0.4 <- pnorm(abs(SHeth0.1table[, "t value"]), lower.tail = FALSE) * 2
+
+## combined table
+(SHeth0.1table <- cbind(SHeth0.1table, "p value" = p0.4))
+
+#p=MULTIPLES
+
+###################
+
+SHedu0.1 <- polr(SelfHealth ~ Education, data=q2.1cc)
+summary(SHedu0.1)
+(SHedu0.1table <- coef(summary(SHedu0.1)))
+## calculate and store p values
+p0.5 <- pnorm(abs(SHedu0.1table[, "t value"]), lower.tail = FALSE) * 2
+
+## combined table
+(SHedu0.1table <- cbind(SHedu0.1table, "p value" = p0.5))
+
+#p=MULTIPLES
+
+###################
+library(lmtest)
+
+#Removing Gender
+
+ordfit0.1 <-  polr(SelfHealth ~ Age + BMI + Ethnicity + Education, data = q2.1cc, Hess=TRUE)
+
+lrtest(ordfit0.1,ordfit1)
+
+#Indicates the addition of Gender from the full model does not change the accuracy of the outcome - we can use a model without Gender.
+
+#Removing Ethnicity
+
+ordfit0.2 <-  polr(SelfHealth ~ Age + BMI + Gender + Education, data = q2.1cc, Hess=TRUE)
+lrtest(ordfit0.2,ordfit1)
+
+#Indicates the addition of Ethnicity from the full model does change the accuracy of the outcome - we should keep Ethnicity within the model.
+
+#Removing Education
+
+ordfit0.3 <-  polr(SelfHealth ~ Age + BMI + Gender + Ethnicity, data = q2.1cc, Hess=TRUE)
+lrtest(ordfit0.3,ordfit1)
+
+#Indicates the addition of Education from the full model does change the accuracy of the outcome - we should keep Education within the model.
+
+#Final Model
+
+ordfit2 <-  polr(SelfHealth ~ Age + BMI + Ethnicity + Education, data = q2.1cc, Hess=TRUE)
+lrtest(ordfit1,ordfit2)
+
+ordfit3 <-  polr(SelfHealth ~ BMI + Ethnicity + Education, data = q2.1cc, Hess=TRUE)
+lrtest(ordfit2,ordfit3)
+```
+
+```{r Final Model,include=TRUE}
+ordfit2 <-  polr(SelfHealth ~ BMI + Ethnicity + Education, data = q2.1cc, Hess=TRUE)
+summary(ordfit2)
+```
+
+
+
+
+
+Estimated model can be written as:
+
+$\text{logit}(\hat{P}(Y=<1))= -4.8671-0.006788*Age-(-0.066950)*BMI-(-0.063713)*GenderMale-0.067435*EthnicityHispanic -(-0.045160)*EthnicityOther - 0.405257*EthnicityWhite - 0.727152*EducationHighSchool - 1.185904*EducationSomeCollege - 1.845145*EducationCollegeGraduate+$
+
+$\text{logit}(\hat{P}(Y=<2))= -2.4840-0.006788*Age-(-0.066950)*BMI-(-0.063713)*GenderMale-0.067435*EthnicityHispanic -(-0.045160)*EthnicityOther - 0.405257*EthnicityWhite - 0.727152*EducationHighSchool - 1.185904*EducationSomeCollege - 1.845145*EducationCollegeGraduate+$
+
+$\text{logit}(\hat{P}(Y=<3))= -0.2569-0.006788*Age-(-0.066950)*BMI-(-0.063713)*GenderMale-0.067435*EthnicityHispanic -(-0.045160)*EthnicityOther - 0.405257*EthnicityWhite - 0.727152*EducationHighSchool - 1.185904*EducationSomeCollege - 1.845145*EducationCollegeGraduate+$
+
+$\text{logit}(\hat{P}(Y=<4))= 1.3012-0.006788*Age-(-0.066950)*BMI-(-0.063713)*GenderMale-0.067435*EthnicityHispanic -(-0.045160)*EthnicityOther - 0.405257*EthnicityWhite - 0.727152*EducationHighSchool - 1.185904*EducationSomeCollege - 1.845145*EducationCollegeGraduate+$
+
+```{r Final model, include=TRUE}
+tbl_regression(ordfit1, exponentiate=TRUE) %>%
+  bold_labels() %>%
+  add_global_p()
+
+library(MASS)
+fitord_final <- polr(SelfHealth ~ BMI + Ethnicity + Education, Hess=TRUE, data = q2.2cc)
+summary(fitord_final)
+confint(fitord_final)
+
+library(MASS)
+fitord_final_1 <- polr(SelfHealth ~ Age + BMI + Ethnicity + Education, Hess=TRUE, data = q2.2cc)
+summary(fitord_final_1)
+confint(fitord_final_1)
+
+
+library(gtsummary)
+
+tbl_regression(fitord_final, exponentiate=TRUE) %>%
+  bold_labels() %>%
+  add_global_p()
+
+library(gtsummary)
+
+tbl_regression(fitord_final_1, exponentiate=TRUE) %>%
+  bold_labels() %>%
+  add_global_p()
+```
+
+```{r Individual tables, include=TRUE}
+library(dplyr)
+ftable <- ftable(xtabs(~ SelfHealth + Gender + Ethnicity + Education, data = q2.1cc))
+ftable
+
+library(gtsummary)
+
+tbl_regression(SHage0.1, exponentiate=TRUE) %>%
+  bold_labels() %>%
+  add_global_p()
+
+tbl_regression(SHbmi0.1, exponentiate=TRUE) %>%
+  bold_labels() %>%
+  add_global_p()
+
+tbl_regression(SHgen0.1, exponentiate=TRUE) %>%
+  bold_labels() %>%
+  add_global_p()
+
+tbl_regression(SHeth0.1, exponentiate=TRUE) %>%
+  bold_labels() %>%
+  add_global_p()
+
+tbl_regression(SHedu0.1, exponentiate=TRUE) %>%
+  bold_labels() %>%
+  add_global_p()
+```
+
+#Brant test for proportional odds
+
+```{r Brant test for Proportional Odds Assumption, include=TRUE}
+library(car)
+q2.2cc$SelfHealth <- ordered(q2.2cc$SelfHealth)
+poTest(fitord_final_1)
+
+```
+
+
+
+
+
+
+```{r model checking, include=TRUE}
+
+library(MASS)
+fitord_final_0 <- polr(SelfHealth ~ 1, Hess=TRUE, data = q2.2cc)
+summary(fitord_final_0)
+confint(fitord_final_0)
+
+library(MASS)
+fitord_final_1 <- polr(SelfHealth ~ Age + BMI + Ethnicity + Education, Hess=TRUE, data = q2.2cc)
+summary(fitord_final_1)
+confint(fitord_final_1)
+
+```
+
